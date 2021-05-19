@@ -85,15 +85,6 @@ class Lattice_2d:
 
         return[-np.add(self.x, self.y), self.x, self.y]
 
-    def checkobtuse(self):
-
-        sellings = [np.dot(self.msb()[0], self.msb()[1]), np.dot(self.msb()[0], self.msb()[2]), np.dot(self.msb()[1], self.msb()[2])]
-
-        if min(sellngs) < 0:
-            print('Caution! The Superbase is not obtuse')
-
-        return sellings
-
 class Obsuper_2d:
 
     def __init__(self,basis):
