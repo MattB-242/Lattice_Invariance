@@ -51,12 +51,15 @@ def dst(a,b,type):
         return max(dlist)
 
 
-def minperdist (a,b, l=1):
+def minperdist (a,b, l=1, cyc = False):
 
         if len(a) != len(b):
             print('Both lists must be the same length')
             return 0
 
+        elif cyc:
+            perlist = [[a[j-i] for i in range (len(a))] for j in range (len(a))]
+        
         else:
             perlist = list(it.permutations(a))
 
@@ -70,16 +73,21 @@ def minperdist (a,b, l=1):
         best = min(allperdist)
         return best
 
+def angcalc_2d(a=1, b=1, alpha):
+    
+    return [[a,0], [b*np.cos(alpha), b*np.sin(alpha)]
+    
+
 class Lattice_2d:
 
     def __init__(self,lattice):
         self.lattice = lattice
-        self.x = np.array(lattice[0])
-        self.y = np.array(lattice[1])
+        self.x = np.array(self.lattice[0])
+        self.y = np.array(self.lattice[1])
         self.inner = np.dot(self.x, self.y)
         self.angle = np.arccos(self.inner)
-        #self.mat = np.array([[[lattice[0][0], lattice[1][0]], [[lattice[0][1],lattice[1][1]]])
-        #self.vol = np.linalg.det(self.mat)
+        self.mat = np.transpose(np.array(self.lattice))
+        self.vol = np.linalg.det(self.mat)
 
     def msb(self):
 
