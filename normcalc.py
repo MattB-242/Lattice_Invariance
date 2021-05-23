@@ -1,5 +1,6 @@
 import numpy as np
 import itertools as it
+import copy
 
 def main():
 
@@ -105,6 +106,19 @@ class Obsuper_2d:
         self.p_lt = np.dot(self.vl, self.vt)
         self.sellings_t = [-self.p_ol, -self.p_ot, -self.p_lt]
 
+    def red2d:():
+            
+            obsp = copy.copy(self.basis)
+            
+            while min(obsp) < 0:
+                for i, v in enumerate(obsp):
+                    if v < 0:
+                        for j in range(len(obsp)):
+                            if i == j:
+                                j -= 2*v
+                            else:
+                                j += 2*v 
+            
 class Lattice_3d:
 
     def __init__(self,lattice):
