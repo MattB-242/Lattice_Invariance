@@ -20,7 +20,7 @@ OBJECTS:
 
 The *Lattice_3d* object should have the form of a list of d co-ordinates in R^3. The most important function is *get_lat_rootform*, which will return the root form of any lattice object in its canonical permutation (it will perform a Niggli reduction automatically first). If you just want the original coform  *get_lat_coform* will do the job. Hopefully every other function is self-explanatory. 
 
-In both cases, the output is a *Coform* object (which if entered directly should be a 2 x 3 array). Its associated *Voform* can be calculated by the *get_voform* function. If you are entering a 'putative' non-reduced coform  the *red_cof* function will produce the actual positive coform in canonical form, while *cf_root* converts that into a root form and *cf_root_bary* will plot barycentric co-ordinates for the top row of the coform in the canonical 
+In both cases, the output is a *Coform* object (which if entered directly should be a 2 x 3 array). Its associated *Voform* can be calculated by the *get_voform* function. If you are entering a 'putative' non-reduced coform  the *red_cof* function will produce the actual positive coform in canonical form, while *cf_root* converts that into a root form and *cf_root_bary* will plot barycentric co-ordinates for the top row of the coform in the canonical. The *cf_permute* function outputs all permitted permutations of the coform values as a vector in R^6. 
 
 The *Voform* object should be entered in the format [[v_0^2], [v_1^2, v_2^2. v_3^2], [v_01^2. v_02^2, v_03^2]]. The *get_coform* function calculates the associated coform.
 
@@ -30,4 +30,6 @@ A coform and voform together can be turned into a *CofVof* object. It can be use
 DISTANCE CALCULATION:
 There are two coform distance calculator functions
 
-*lat_cfdist* takes two Lattice_3d objects as input. dtype defaults to 2 and calculates the coform distance derived from the standard euclidean distance. Set dtype = 1 for taxicab metric (L_1) and dtype = 0 for max metric (L_inf). Set the parameter reflect = True if you wish to include reflections as part of the permutation group. 
+*lat_cfdist* takes two Lattice_3d objects as input. dtype defaults to 2 and calculates the coform distance derived from the standard Euclidean distance. Note that it therefore needs to go through as many reduction steps as are required to get to positive conorm values. Set dtype = 1 for taxicab metric (L_1) and dtype = 0 for max metric (L_inf). 
+
+*cfdist* does the same thing, but takes two Coform objects as input. 
