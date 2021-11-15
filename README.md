@@ -1,6 +1,12 @@
 # Rootform_2d
 Calculation of and with root forms in 2 Dimensions
 
+Root Form should be entered as a pair of inputs - an ordered list of positive numbers and a sign (+1, or -1)
+
+Projected Form objects should be entered as a list [x, y]
+
+Lattices should be entered as two lists [[x_1, y_1], [x_2, y_2]]
+
 
 # Coform
 Calculation of, and with coforms and voforms from lattices. Requires standard packages, plus Pymatgen for the generation of Niggli Reduced cells and the general calculation of lattices from parameter. 
