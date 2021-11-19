@@ -1,11 +1,57 @@
 # Rootform_2d
 Calculation of and with root forms in 2 Dimensions
 
-Root Form should be entered as a pair of inputs - an ordered list of positive numbers and a sign (+1, or -1)
+[NB current functions are based on an earlier version of the paper and may be updated in future releases]
 
-Projected Form objects should be entered as a list [x, y]
+**Utility Functions**
 
-Lattices should be entered as two lists [[x_1, y_1], [x_2, y_2]]
+*distgen* is a generic Minkowkski distance calculator in R^2. It takes two inputs - a value of q >= 0 and two points in R^2 given as lists. If q=0 it will return the Chebyshev (L_inf) distance between points, otherwise it will return the L_q distance. 
+
+*mincyc* takes lists of any length and returns the cyclic permutation that puts the smallest list member first
+
+*roundlist* takes a list of floats l and an integer value r. It returns l with r-rounded float values. 
+
+*redstep* performs a single reduction step for an input coform (three member list). 
+
+**Working with Root Forms**
+
+Root Form objects consist of a pair of inputs - an ordered list of three positive numbers and a sign (+1, or -1). An unoriented root form should be entered with a positive sign. **Achiral** root forms should also be entered with a positive sign, although if this is not adhered to the sign will be corrected. The following methods can be applied to a root form:
+
+*rightsign* will return the unordered root form - that is, it will swap the last two values of the root form if the sign is negative
+
+*rf_chirality* will, at the moment return the L_inf based chirality of the root form. In future releases it will calculate L_q based chirality for any value of q
+
+*projform* will calculate the co-ordinates of the projective form in the glued quotient triangles of the paper
+
+*coform2d* and *voform2d* will return the **oriented** coform and voform for the obtuse superbase represented by the root form. Vectors are in anticlockwise order as stated in the paper. 
+
+*make2lat* will reconstitute the actual 2 dimensional lattice based on the input root form. 
+
+[The following Root Form methods are planned for future updates]
+
+*rf_nearest_achiral* will return the closest achiral lattice by root form metric
+
+**Working with Projected Forms**
+
+Projected Form objects should be entered simply as a list [x, y]. The following methods are available:
+
+*pf_chirality* returns the L_inf chirality measure for the projected form. In future releases it will calculate L_q based chirality for any value of q
+
+*root_from_pf2* will return the signed root form derived from an input projected form
+
+*lattice_from_pf2* will return the 2D latice reconstituted from an input projected form 
+
+[The following Root Form methods are planned for future updates]
+
+*find_nearest_achiral_pf* will take a value q return the point that is L_q - closest to the boundary of the quotient triangle. If q=0 the Chebyshev distance will be returned.  
+
+**Working with Lattices**
+
+The Lat2D class should be entered as two lists [[x_1, y_1], [x_2, y_2]]. The following methods are available:
+
+*make_CF* returns an anticlockwise oriented coform for the lattice. 
+
+*make_RF* returns the signed root form. 
 
 
 # Coform
