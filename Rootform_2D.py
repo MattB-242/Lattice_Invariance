@@ -30,13 +30,17 @@ def mincyc(l):
 
     return l[top:] + l[:top]
 
-def roundlist(l):
+def roundlist(l, r=2):
 
     rl = []
     for i in l:
-        rl.append(round(i,2))
+        rl.append(round(i,r))
 
     return rl
+
+'Calculate M_inf quantity (see paper, Lemma C.2)'
+def minf(a,b,c,d):
+    return max([np.abs(a-b), np.abs(c-d), (np.abs(a+b-c+d))/2])
 
 '----------------------------------------------------'
 'LATTICE CLASS IN 2D WITH ROOT FORM GENERATOR'
@@ -49,13 +53,13 @@ class Lat2d:
         self.ob = -(self.x + self.y)
         self.xlen = np.linalg.norm(vec_1)
         self.ylen = np.linalg.norm(vec_2)
-        self.oblen = np.linalg.norm(ob)
+        self.oblen = np.linalg.norm(self.ob)
         self.inner = np.dot(vec_1, vec_2)
         self.angle = np.rad2deg(np.arccos(self.inner/(self.xlen * self.ylen)))
 
     def make_CF(self):
 
-        inners = [np.dot(self.x, self.y), np.dot(self.ob, self.x), np.dot(self.ob, self.y)]
+        inners = [-np.dot(self.x, self.y), -np.dot(self.ob, self.x), -np.dot(self.ob, self.y)]
 
         while min(inners) < 0:
             for i in inners:
@@ -67,10 +71,10 @@ class Lat2d:
     def make_RF(self):
 
         c = self.make_CF()
-        if c[2] > c[1]:
-            return RF2_signed([np.sqrt(c_0), np.sqrt(c_2), np.sqrt(c_1)], -1)
+        if c[2] < c[1]:
+            return RF2_signed([np.sqrt(c[0]), np.sqrt(c[2]), np.sqrt(c[1])], -1)
         else:
-            return RF2_signed([np.sqrt(c_0), np.sqrt(c_1), np.sqrt(c_2)], 1)
+            return RF2_signed([np.sqrt(c[0]), np.sqrt(c[1]), np.sqrt(c[2])], 1)
 
 
 '----------------------------------------------------'
@@ -80,42 +84,47 @@ class Lat2d:
 class RF2_signed:
 
     def __init__(self, vec, sign):
-        self.unorient = vec
+        self.vec = vec
         self.r_12 = vec[0]
         self.r_01 = vec[1]
         self.r_02 = vec[2]
+
+        'Throws a warning if the root form is not ordered'
+        if sorted(self.vec) != self.vec:
+            print('Warning! Root form is not ordered.')
+
+        'Reverts to sign 0 if lattice has achiral characteristics'
         if self.r_12 == 0 or (self.r_12 == self.r_01 or self.r_01 == self.r_02):
-            self.sign = 1
+            self.sign = 0
         else:
             self.sign = sign
+
+
 
     'Create correctly ordered unoriented root form'
     def rightsign(self):
         if self.sign == -1:
-            return [self.unorient[0], self.unorient[2], self.unorient[1]]
+            return [self.vec[0], self.vec[2], self.vec[1]]
         else:
-            return self.unorient
+            return self.vec
 
-    'Calculate Chirality (L_inf ONLY)'
+    'Calculate Chirality (L_inf and L_2)'
     def rf_chirality(self, dtype = 0):
-
         if dtype == 0:
-            return min([self.r_12, (self.r_01 - self.r_12)/2, (self.r_02 - self.r_01)])
+            return self.sign* (min([self.r_12, (self.r_01 - self.r_12)/2, (self.r_02 - self.r_01)/2]))
+        elif dtype == 2:
+            return self.sign* (min([self.r_12, (self.r_01 - self.r_12)/np.sqrt(2), (self.r_02 - self.r_01)/np.sqrt(2)]))
         else:
-            print("Sorry, I don't know how to do that yet!")
+            print('I can only calculate L_2 and L_inf distances')
             return 0
 
-    'Find Nearest Chiral Lattice (L_inf ONLY)'
-    def rf_nearest_chiral(self):
-
-        pass
 
     'Return oriented PF'
     def projform(self):
 
-        a = sum(vec)
+        a = sum(self.vec)
 
-        return [(self.sign*(self.r_01 - self.r_02))/a, self.r_12/a]
+        return PF2([(self.r_02 - self.r_01)/a, (3*self.r_12)/a], self.sign)
 
 
     'Return Coform'
@@ -143,45 +152,46 @@ class RF2_signed:
 
         return [v_1, v_2]
 
-    def permlist(self, orient = True):
-        if orient:
-            return [self.unorient, [self.r_02, self.r_12, self.r_01], [self.r_01, self.r_02, self.r_12]]
-        else:
-            return [self.unorient, [self.r_02, self.r_12, self.r_01], [self.r_01, self.r_02, self.r_12],
-                    [self.r_01, self.r_12, self.r_02], [self.r_02, self.r_01, self.r_02], [self.r_12, self.r_02, self.r_01]]
-
 '----------------------------------------------------'
-'2D ORIENTED ROOT FORM CLASS'
+'PROJECTED FORM CLASS'
 '----------------------------------------------------'
 class PF2:
 
-    def __init__(self, point):
-        self.x = point[0]
-        self.y = point[1]
-        if self.x < 0:
-            self.sign = -1
+    def __init__(self, point, sign):
+        self.qtpoint = point
+        self.x = self.qtpoint[0]
+        self.y = self.qtpoint[1]
+
+        'Throws a warning if the projected form is not in QT'
+        if self.x + self.y > 1 :
+            print('Warning! Projected form is not in Quotient Triangle')
+
+        'Chirality sign reverts to 0 if on boundary'
+        if self.x + self.y == 1 or (self.x == 0 or self.y == 0):
+            self.sign = 0
         else:
-            self.sign = 1
+            self.sign = sign
 
-    def pf_chirality(self, dtype = 0):
-        if dtype == 0:
-            return min([self.x, self.y, (1-(2*self.x) - (3*self.y))/5])
+    def qs_plot(self):
+        if self.sign < 0:
+            return [1-self.x, 1-self.y]
         else:
-            print("I don't know how to do that yet!")
-            return 0
+            return [self.x, self.y]
 
+    'Calculates chirality based on infinity metric and position in quotient square'
+    def pc_inf(self):
 
-    def find_nearest_pf_point():
-
-        pass
+        return self.sign*min([self.x, self.y, (1-self.x -self.y)/2])
 
     def root_from_PF2(self):
-        x = self.sign*self.x
+        x = self.x
         y = self.y
 
-        r = (1 + 2*x - y)/2
+        r_12 = y/3
+        r_01 = (1-(r_12 + x))/2
+        r_02 = (1 -r_12 + x)/2
 
-        l = [y, 1 - (r + y), r]
+        l = sorted([r_12, r_01, r_02])
 
         return RF2_signed(l, self.sign)
 
@@ -190,48 +200,38 @@ class PF2:
         return self.root_from_PF2().make2lat()
 
 
+'Calculate Chebyshev distance between two root forms. '
+'Set orient = true to calculate oriented distance'
+def rf2dist(rf_1, rf_2,  orient = True, dtype = 0):
+    rfv_1 = rf_1.vec
+    rfv_2 = rf_2.vec
+    if not orient or ((rf_1.sign == rf_2.sign) or (rf_1.sign == 0 or rf_2.sign == 0)):
+        return max(np.abs(rfv_1[0] - rfv_2[0]),np.abs(rfv_1[1] - rfv_2[1]),np.abs(rfv_1[2] - rfv_2[2]))
+    else:
+        if dtype == 0:
+            d_0 = max(rfv_1[0] + rfv_2[0], np.abs(rfv_1[1]-rfv_2[1]), np.abs(rfv_1[2] - rfv_2[2]))
+            d_1 = max(np.abs(rfv_1[2] - rfv_2[2]), minf(rfv_1[0], rfv_1[1], rfv_2[0], rfv_2[1]))
+            d_2 = max(np.abs(rfv_1[0] - rfv_2[0]), minf(rfv_1[1], rfv_1[2], rfv_2[1], rfv_2[2]))
+            return min(d_0, d_1, d_2)
 
+        else:
+            c1 = (-rfv_2[0], rfv_2[1], rfv_2[2])
+            c2 = (rfv_2[2], rfv2_[0], rfv_2[1])
+            c3 = (rfv_2[0], rfv_2[2], rfv_2[1])
+            return min(distgen(2, rfv_1, c1), distgen(2, rfv_1, c2), distgen(2, rfv_1, c3))
 
-'Calculate distance between two root forms'
-def rf2dist(rf_1, rf_2, d = 0, orient = True):
-
-
-
-    pass
-
-'Calculate distance between two projected forms'
-def rf2dist(rf_1, rf_2, d = 0, orient = True):
-
-    pass
-
-
-'PFs for Inverse Design'
-p1 = [1/10, 1/10]
-p2 = [1/6, 1/6]
-p3 = [1/24, 1/6]
-p4 = [1/4, 1/24]
-p5 = [0,0]
-p6 = [1/4, 1/6]
-p7 = [0, 1/3]
-
-allpfs = [p1, p2, p3, p4, p5, p6, p7]
-
-
-for i in allpfs:
-    pform = PF2(i)
-    pchir = pform.pf_chirality()
-    rform = pform.root_from_PF2()
-    cform = rform.coform2d()
-    vform = rform.voform2d()
-    rchir = rform.rf_chirality()
-    rlist = roundlist(rform.unorient)
-    lat = [roundlist(i) for i in pform.lattice_from_PF2()]
-    print('-------------------------------------------')
-    print('for PF ' + repr(roundlist(i)))
-    print('PC_Inf = ' + repr(round(pchir,2)))
-    print('Root Form = ' + repr(rlist))
-    print('Coform = ' + repr(roundlist(cform)))
-    print('Voform = ' + repr(roundlist(vform)))
-    print('RC_Inf =' + repr(round(rchir,2)))
-    print('Actual Lattice = ' + repr(lat))
-    print('-------------------------------------------')
+'Calculate Chebyshev or L_2 distance between two projected forms. '
+'Set orient = true to calculate oriented distance'
+def pf2dist(pf_1, pf_2, orient = True, dtype =0):
+    p_1 = pf_1.qtpoint
+    p_2 = pf_2.qtpoint
+    if not orient or (pf_1.sign == pf_2.sign or (pf_1.sign == 0 or pf_2.sign == 0)):
+        return distgen (2, p_1, p_2)
+    else:
+        if dtype == 0:
+            d_x = max([np.abs(p_2[0] - p_1[0]), p_2[1]+p_1[1]])
+            d_y = max([p_2[0] + p_1[0], np.abs(p_2[1]-p_1[1])])
+            d_xy = max([np.abs(p_2[0]-p_1[0]), 1-p_2[0]-p_2[1], np.abs(1-p_1[1]-p_2[0])])
+            return min(d_x, d_y, d_xy)
+        else:
+            return min(distgen(2, p_1, [-p_2[0], p_2[1]]), distgen(2, p_1, [p_2[0], -p_2[1]]), distgen(2, p_1, [1-p_2[1], 1-p_2[0]]))
