@@ -13,13 +13,13 @@ Calculation of and with root forms in 2 Dimensions
 
 **Working with Root Forms**
 
-Root Form objects consist of a pair of inputs - an ordered list of three positive numbers and a sign (+1, or -1). An unoriented root form should be entered with a positive sign. **Achiral** root forms should also be entered with a positive sign, although if this is not adhered to the sign will be corrected. The following methods can be applied to a root form:
+Root Form objects consist of a pair of inputs - an ordered list of three positive numbers and a sign (0, +1, -1). If an **achiral** root forms is entered, the sign will default to 0 regardless of the input:
 
 *rightsign* will return the unordered root form - that is, it will swap the last two values of the root form if the sign is negative
 
 *rf_chirality* will, return the signed L_inf or L_2 based chirality of the root form, depending on whether dtype is set to 0 or 2
 
-*projform* will calculate the co-ordinates of the projective form in the glued quotient triangles of the paper
+*projform* will return the co-ordinates of the form in the quotient triangle, along with the sign of the root form, as a PF2 object. 
 
 *coform2d* and *voform2d* will return the **oriented** coform and voform for the obtuse superbase represented by the root form. Vectors are in anticlockwise order as stated in the paper. 
 
@@ -27,17 +27,15 @@ Root Form objects consist of a pair of inputs - an ordered list of three positiv
 
 **Working with Projected Forms**
 
-Projected Form objects should be entered simply as a list [x, y]. The following methods are available:
+Projected Form (PF2) objects should be entered  as a list [x, y] followed by a value +/-1 or 0. The following methods are available:
+
+*qs_plot* will return the co-ordinates of the projected form in the quotient square. 
 
 *pf_chirality* returns the signed L_inf or L_2 chirality measure for the projected form depending on whether dtype is set to 0 or 2. Any other setting of dtype will return an error message. 
 
 *root_from_pf2* will return the signed root form derived from an input projected form
 
-*lattice_from_pf2* will return the 2D latice reconstituted from an input projected form 
-
-[The following Root Form methods are planned for future updates]
-
-*find_nearest_achiral_pf* will take a value q return the point that is L_q - closest to the boundary of the quotient triangle. If q=0 the Chebyshev distance will be returned.  
+*lattice_from_pf2* will return the 2D lattice reconstituted from an input projected form 
 
 **Working with Lattices**
 
