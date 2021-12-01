@@ -1,8 +1,6 @@
 # Rootform_2d
 Calculation of and with root forms in 2 Dimensions
 
-[NB current functions are based on an earlier version of the paper and may be updated in future releases]
-
 **Utility Functions**
 
 *distgen* is a generic Minkowkski distance calculator in R^2. It takes two inputs - a value of q >= 0 and two points in R^2 given as lists. If q=0 it will return the Chebyshev (L_inf) distance between points, otherwise it will return the L_q distance. 
@@ -19,7 +17,7 @@ Root Form objects consist of a pair of inputs - an ordered list of three positiv
 
 *rightsign* will return the unordered root form - that is, it will swap the last two values of the root form if the sign is negative
 
-*rf_chirality* will, at the moment return the L_inf based chirality of the root form. In future releases it will calculate L_q based chirality for any value of q
+*rf_chirality* will, return the signed L_inf or L_2 based chirality of the root form, depending on whether dtype is set to 0 or 2
 
 *projform* will calculate the co-ordinates of the projective form in the glued quotient triangles of the paper
 
@@ -27,15 +25,11 @@ Root Form objects consist of a pair of inputs - an ordered list of three positiv
 
 *make2lat* will reconstitute the actual 2 dimensional lattice based on the input root form. 
 
-[The following Root Form methods are planned for future updates]
-
-*rf_nearest_achiral* will return the closest achiral lattice by root form metric
-
 **Working with Projected Forms**
 
 Projected Form objects should be entered simply as a list [x, y]. The following methods are available:
 
-*pf_chirality* returns the L_inf chirality measure for the projected form. In future releases it will calculate L_q based chirality for any value of q
+*pf_chirality* returns the signed L_inf or L_2 chirality measure for the projected form depending on whether dtype is set to 0 or 2. Any other setting of dtype will return an error message. 
 
 *root_from_pf2* will return the signed root form derived from an input projected form
 
