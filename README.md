@@ -3,11 +3,11 @@ Calculation of and with root forms in 2 Dimensions
 
 **Utility Functions**
 
-*distgen* is a generic Minkowkski distance calculator in R^2. It takes two inputs - a value of q >= 0 and two points in R^2 given as lists. If q=0 it will return the Chebyshev (L_inf) distance between points, otherwise it will return the L_q distance. 
+*distgen(q, v_1, v_2)* is a generic Minkowkski distance calculator in R^2. It takes two inputs - a value of q >= 0 and two points in R^2 given as lists. If q=0 it will return the Chebyshev (L_inf) distance between points, otherwise it will return the L_q distance. 
 
-*mincyc* takes lists of any length and returns the cyclic permutation that puts the smallest list member first
+*mincyc(l)* takes a list l of any length and returns the cyclic permutation that puts the smallest list member first
 
-*roundlist* takes a list of floats l and an integer value r. It returns l with r-rounded float values. 
+*roundlist(l,r) * takes a list of floats l and an integer value r. It returns l with r-rounded float values. 
 
 *redstep* performs a single reduction step for an input coform (three member list). 
 
@@ -17,7 +17,7 @@ Root Form objects consist of a pair of inputs - an ordered list of three positiv
 
 *rightsign* will return the unordered root form - that is, it will swap the last two values of the root form if the sign is negative
 
-*rf_chirality* will, return the signed L_inf or L_2 based chirality of the root form, depending on whether dtype is set to 0 or 2
+*rf_chirality(dtype = 0)* will, return the signed L_inf or L_2 based chirality of the root form, depending on whether dtype is set to 0 or 2
 
 *projform* will return the co-ordinates of the form in the quotient triangle, along with the sign of the root form, as a PF2 object. 
 
@@ -27,11 +27,11 @@ Root Form objects consist of a pair of inputs - an ordered list of three positiv
 
 **Working with Projected Forms**
 
-Projected Form (PF2) objects should be entered  as a list [x, y] followed by a value +/-1 or 0. The following methods are available:
+Projected Form (PF2) objects should be entered  as a list [x, y] followed by a value +/-1 or 0 indicating the sign of the lattice from which the projected form is derived. The following methods are available:
 
 *qs_plot* will return the co-ordinates of the projected form in the quotient square. 
 
-*pf_chirality* returns the signed L_inf or L_2 chirality measure for the projected form depending on whether dtype is set to 0 or 2. Any other setting of dtype will return an error message. 
+*pf_chirality(dtype)* returns the signed L_inf or L_2 chirality measure for the projected form depending on whether dtype is set to 0 or 2. Any other setting of dtype will return an error message. 
 
 *root_from_pf2* will return the signed root form derived from an input projected form
 
@@ -44,6 +44,12 @@ The Lat2D class should be entered as two lists [[x_1, y_1], [x_2, y_2]]. The fol
 *make_CF* returns an anticlockwise oriented coform for the lattice. 
 
 *make_RF* returns the signed root form. 
+
+**Distance Calculations**
+
+*pf2dist(pf_1, pf_2, orient = True, dtype = 2)* will take two projected forms and calculate the L_2 oriented distance between them by default. It will calculate the unoriented distance if orient is set to False (or both projected forms share a sign or either are achiral), and the oriented or unoriented Chebyshev distance if dtype is set to 0
+
+*rf2dist(rf_1, rf_2, orient = True, dtype = 2)* will take two root forms and calculate the L_2 oriented distance between them by default. It will calculate the unoriented distance if orient is set to False (or both projected forms share a sign or either are achiral), and the oriented or unoriented Chebyshev distance if dtype is set to 0
 
 
 # Coform
