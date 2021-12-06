@@ -17,7 +17,7 @@ Root Form objects consist of a pair of inputs - an ordered list of three positiv
 
 *rightsign* will return the unordered root form - that is, it will swap the last two values of the root form if the sign is negative
 
-*rf_chirality(dtype = 0, pgroup = 2)* will, return the signed L_inf or L_2 based point group chirality of the root form. Id pgroup is set to 4 or 6, the D4 or D6 chirality will instead be calculated. If dtype is set to 2, the L_2 distance will be calculated rather than L_inf
+*rf_chir(dtype = 0, pgroup = 2)* will, return the signed L_inf or L_2 based point group chirality of the root form. Id pgroup is set to 4 or 6, the D4 or D6 chirality will instead be calculated. If dtype is set to 2, the L_2 distance will be calculated rather than L_inf
 
 *projform* will return the co-ordinates of the form in the quotient triangle, along with the sign of the root form, as a PF2 object. 
 
@@ -31,7 +31,7 @@ Projected Form (PF2) objects should be entered  as a list [x, y] followed by a v
 
 *qs_plot* will return the co-ordinates of the projected form in the quotient square. 
 
-*pf_chirality(dtype = 0, pgroup = 2)* returns the signed L_inf or L_2 chirality measure for the projected form depending on whether dtype is set to 0 or 2. Setting pgroup to 4 or 6 will calculate the D4 or D6 Chirality. Any other setting of dtype or pgroup will return an error message. 
+*pf_chir(dtype = 0, pgroup = 2)* returns the signed L_inf or L_2 chirality measure for the projected form depending on whether dtype is set to 0 or 2. Setting pgroup to 4 or 6 will calculate the D4 or D6 Chirality. Any other setting of dtype or pgroup will return an error message. 
 
 *root_from_pf2* will return the signed root form derived from an input projected form
 
