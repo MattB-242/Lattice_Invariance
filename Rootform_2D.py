@@ -109,14 +109,29 @@ class RF2_signed:
             return self.vec
 
     'Calculate Chirality (L_inf and L_2)'
-    def rf_chirality(self, dtype = 0):
-        if dtype == 0:
-            return self.sign* (min([self.r_12, (self.r_01 - self.r_12)/2, (self.r_02 - self.r_01)/2]))
-        elif dtype == 2:
-            return self.sign* (min([self.r_12, (self.r_01 - self.r_12)/np.sqrt(2), (self.r_02 - self.r_01)/np.sqrt(2)]))
-        else:
-            print('I can only calculate L_2 and L_inf distances')
-            return 0
+    def rf_chir(self, pgroup = 2, dtype = 0):
+        if pgroup == 2:
+            if dtype == 0:
+                return self.sign* (min([self.r_12, (self.r_01 - self.r_12)/2, (self.r_02 - self.r_01)/2]))
+            elif dtype == 2:
+                return self.sign* (min([self.r_12, (self.r_01 - self.r_12)/np.sqrt(2), (self.r_02 - self.r_01)/np.sqrt(2)]))
+            else:
+                print('I can only calculate L_2 and L_inf distances')
+                return 0
+        elif pgroup == 4:
+            if dtype == 0:
+                return (self.sign*max(2*self.r_12, (self.r_01-self.r_02)/2))/2
+            elif dtype == 2:
+                return (self.sign*(np.sqrt((4*self.r_12) +(self.r_01 + self.r_02)**2)))/2
+                print('I can only calculate L_2 and L_inf distances')
+                return 0
+        elif pgroup == 6:
+            if dtype == 0:
+                return (self.sign*(self.r_02 - self.r_12))
+            elif dtype == 2:
+                return (self.sign*(np.sqrt(self.r_12**2 + self.r_01**2 + self.r_02**2 -(self.r_01*self.r_12) - (self.r_12*self.r_02) - (self.r_01*self.r_02))))*np.sqrt(2/3)
+                print('I can only calculate L_2 and L_inf distances')
+                return 0
 
 
     'Return oriented PF'
@@ -179,9 +194,39 @@ class PF2:
             return [self.x, self.y]
 
     'Calculates chirality based on infinity metric and position in quotient square'
-    def pc_inf(self):
+    def pf_chir(self, dtype = 0, pgroup = 2):
 
-        return self.sign*min([self.x, self.y, (1-self.x -self.y)/2])
+        if dtype == 0:
+            if pgroup == 2:
+                return self.sign*min([self.x, self.y, (1-self.x -self.y)/2])
+            elif pgroup == 4:
+                return self.sign*self.x
+            elif pgroup == 6:
+                return self.sign*(1-self.y)
+            else:
+                print('Please enter a meaningful point group!')
+                return 0
+        elif dtype == 2:
+            if pgroup == 2:
+                return self.sign*min([self.x, self.y, (1-self.x -self.y)/2])
+            elif pgroup == 4:
+                return distgen(2, [self.x, self.y], (0,0))
+            elif pgroup == 6:
+                return distgen(2, [self.x, 1-self.y], (0,0))
+            else:
+                print('Please enter a meaningful point group!')
+                return 0
+        else:
+            if pgroup == 2:
+                print('Can only calculate D2 chirality for either L_2 or L_inf metric')
+                return 0
+            elif pgroup == 4:
+                return distgen(dtype, [self.x, self.y], (0,0))
+            elif pgroup == 6:
+                return distgen(dtype, [self.x, 1-self.y], (0,0))
+            else:
+                print('Please enter a meaningful point group!')
+                return 0
 
     def root_from_PF2(self):
         x = self.x
