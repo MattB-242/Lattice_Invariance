@@ -9,8 +9,6 @@ Calculation of and with root forms in 2 Dimensions
 
 *roundlist(l,r) * takes a list of floats l and an integer value r. It returns l with r-rounded float values. 
 
-*redstep* performs a single reduction step for an input coform (three member list). 
-
 **Working with Root Forms**
 
 Root Form objects consist of a pair of inputs - an ordered list of three positive numbers and a sign (0, +1, -1). If an **achiral** root forms is entered, the sign will default to 0 regardless of the input:
@@ -21,7 +19,7 @@ Root Form objects consist of a pair of inputs - an ordered list of three positiv
 
 *projform* will return the co-ordinates of the form in the quotient triangle, along with the sign of the root form, as a PF2 object. 
 
-*coform2d* and *voform2d* will return the **oriented** coform and voform for the obtuse superbase represented by the root form. Vectors are in anticlockwise order as stated in the paper. 
+*coform2d* and *voform2d* will return the coform  and voform for the obtuse superbase represented by the root form. Vectors are in anticlockwise order as stated in the paper. 
 
 *make2lat* will reconstitute the actual 2 dimensional lattice based on the input root form. 
 
@@ -41,9 +39,15 @@ Projected Form (PF2) objects should be entered  as a list [x, y] followed by a v
 
 The Lat2D class should be entered as two lists [[x_1, y_1], [x_2, y_2]]. The following methods are available:
 
-*make_CF* returns an anticlockwise oriented coform for the lattice. 
+*make_obsb* will iterate the reduction step detailed in the paper until an obtuse superbase is reached
 
-*make_RF* returns the signed root form. 
+*sb_sign* will calculate the sign of the superbase (positive if superbase vectors are ordered anticlockwise, negative if superbase vectors are ordered clockwise)
+
+*make_cf* returns the **unsorted** coform for the lattice
+
+*lattice_sign* returns the sign of the lattice as calculated from the coform - it reverses the sign of the superbase if a swap of two values is required to order the coform values list, or keeps that sign if ordering the list requires only permutation. 
+
+*make_rf* returns the signed root form object - it will return 0 if the coform is achiral (to within a set tolerance of $10^-8$), otherwise it will return the sign passed to it by the *lattice_sign* function. 
 
 **Distance Calculations**
 
