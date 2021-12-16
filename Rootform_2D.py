@@ -1,4 +1,14 @@
 import numpy as np
+import pandas as pd
+import csv
+import copy
+from math import atan2
+from math import degrees
+
+infile = '/Users/mattbright/Desktop/2D_Data/all_CSD_nodisord_cent_870630_clean_coforms.csv'
+outpath = '/Users/mattbright/Desktop/2D_Data'
+
+tol = 10**-8
 
 '-----------------------------------------------------'
 'UTILITY FUNCTIONS'
@@ -42,6 +52,36 @@ def roundlist(l, r=2):
 def minf(a,b,c,d):
     return max([np.abs(a-b), np.abs(c-d), (np.abs(a+b-c+d))/2])
 
+'Make a 2D Lattice that from length and angle parameters (in degrees)'
+def makelat (a, b, t):
+    trad = np.deg2rad(t)
+
+    return Lat2d([a, 0], [b*np.cos(trad), b*np.sin(trad)])
+
+def countsame(l):
+    count = [l.count(i) for i in l]
+    return max(count)
+
+def sb_sign(veclist):
+
+    u_1 = veclist[1]/np.linalg.norm(veclist[1])
+    u_0 = veclist[0]/np.linalg.norm(veclist[0])
+    u_2 = veclist[2]/np.linalg.norm(veclist[2])
+
+    ang_1 = degrees(atan2(u_1[1], u_1[0])) % 360
+    ang_0 = degrees(atan2(u_0[1], u_0[0])) % 360
+    ang_2 = degrees(atan2(u_2[1], u_2[0])) % 360
+
+    ang_12 = (ang_2 - ang_1) % 360
+    ang_10 = (ang_0 - ang_1) % 360
+
+    if ang_12 < ang_10:
+        sgn = 1
+    else:
+        sgn = -1
+
+    return ([v_0, v_1, v_2], sgn)
+
 '----------------------------------------------------'
 'LATTICE CLASS IN 2D WITH ROOT FORM GENERATOR'
 '----------------------------------------------------'
@@ -57,24 +97,82 @@ class Lat2d:
         self.inner = np.dot(vec_1, vec_2)
         self.angle = np.rad2deg(np.arccos(self.inner/(self.xlen * self.ylen)))
 
-    def make_CF(self):
+    def make_obsb(self):
 
-        inners = [-np.dot(self.x, self.y), -np.dot(self.ob, self.x), -np.dot(self.ob, self.y)]
+        v_1 = self.x
+        v_2 = self.y
+        v_0 = self.ob
+
+
+        inners = [-np.dot(v_1, v_2), -np.dot(v_0, v_1), -np.dot(v_0, v_2)]
+        stepcount = 0
 
         while min(inners) < 0:
-            for i in inners:
-                if i < 0:
-                    inners = redstep(inners, inners.index(i))
+            if inners[0] < 0:
+                v_0 = v_1 - v_2
+                v_1 = -v_1
+            elif inners[1] < 0:
+                v_2 = v_0 - v_1
+                v_0 = -v_0
+            else:
+                v_1 = v_0 - v_2
+                v_0 = -v_0
+            inners = [-np.dot(v_1, v_2), -np.dot(v_0, v_1), -np.dot(v_0, v_2)]
 
-        return mincyc(inners)
+        return [v_0, v_1, v_2]
 
-    def make_RF(self):
+    def sb_sign(self):
 
-        c = self.make_CF()
-        if c[2] < c[1]:
-            return RF2_signed([np.sqrt(c[0]), np.sqrt(c[2]), np.sqrt(c[1])], -1)
+        veclist = self.make_obsb()
+
+        u_1 = veclist[1]/np.linalg.norm(veclist[1])
+        u_0 = veclist[0]/np.linalg.norm(veclist[0])
+        u_2 = veclist[2]/np.linalg.norm(veclist[2])
+
+        ang_1 = degrees(atan2(u_1[1], u_1[0])) % 360
+        ang_0 = degrees(atan2(u_0[1], u_0[0])) % 360
+        ang_2 = degrees(atan2(u_2[1], u_2[0])) % 360
+
+        ang_12 = (ang_2 - ang_1) % 360
+        ang_10 = (ang_0 - ang_1) % 360
+
+        if ang_12 < ang_10:
+            sgn = 1
         else:
-            return RF2_signed([np.sqrt(c[0]), np.sqrt(c[1]), np.sqrt(c[2])], 1)
+            sgn = -1
+
+        return sgn
+
+    def make_cf(self):
+
+        obsb = self.make_obsb()
+        return [-np.dot(obsb[1], obsb[2]), -np.dot(obsb[0], obsb[1]), -np.dot(obsb[0], obsb[2])]
+
+
+    def lattice_sign(self):
+
+        cf = mincyc(self.make_cf())
+        sgn = self.sb_sign()
+
+        if cf[1] > cf[2]:
+            sgn = -sgn
+        else:
+            sgn = sgn
+
+        return sgn
+
+    def make_rf(self):
+
+        cf = self.make_cf()
+        sgn = self.lattice_sign()
+
+        rf = sorted([np.sqrt(i) for i in cf])
+
+        if np.abs(rf[0])<tol or (np.abs(rf[0] - rf[1]) < tol or np.abs(rf[1] - rf[2])<tol):
+                return RF2_signed(rf, 0)
+        else:
+                return RF2_signed(rf, sgn)
+
 
 
 '----------------------------------------------------'
@@ -88,18 +186,11 @@ class RF2_signed:
         self.r_12 = vec[0]
         self.r_01 = vec[1]
         self.r_02 = vec[2]
+        self.sign = sign
 
         'Throws a warning if the root form is not ordered'
         if sorted(self.vec) != self.vec:
             print('Warning! Root form is not ordered.')
-
-        'Reverts to sign 0 if lattice has achiral characteristics'
-        if self.r_12 == 0 or (self.r_12 == self.r_01 or self.r_01 == self.r_02):
-            self.sign = 0
-        else:
-            self.sign = sign
-
-
 
     'Create correctly ordered unoriented root form'
     def rightsign(self):
@@ -109,29 +200,37 @@ class RF2_signed:
             return self.vec
 
     'Calculate Chirality (L_inf and L_2)'
-    def rf_chir(self, pgroup = 2, dtype = 0):
+    def rf_grpchir(self, pgroup = 2, dtype = 0):
         if pgroup == 2:
             if dtype == 0:
-                return self.sign* (min([self.r_12, (self.r_01 - self.r_12)/2, (self.r_02 - self.r_01)/2]))
+                return min([self.r_12, (self.r_01 - self.r_12)/2, (self.r_02 - self.r_01)/2])
             elif dtype == 2:
-                return self.sign* (min([self.r_12, (self.r_01 - self.r_12)/np.sqrt(2), (self.r_02 - self.r_01)/np.sqrt(2)]))
+                return min([self.r_12, (self.r_01 - self.r_12)/np.sqrt(2), (self.r_02 - self.r_01)/np.sqrt(2)])
             else:
                 print('I can only calculate L_2 and L_inf distances')
                 return 0
         elif pgroup == 4:
             if dtype == 0:
-                return (self.sign*max(2*self.r_12, (self.r_01-self.r_02)/2))/2
+                return max([2*self.r_12, (self.r_01-self.r_02)/2])
             elif dtype == 2:
-                return (self.sign*(np.sqrt((4*self.r_12) +(self.r_01 + self.r_02)**2)))/2
+                return (np.sqrt((4*self.r_12) +(self.r_01 + self.r_02)**2))/2
                 print('I can only calculate L_2 and L_inf distances')
                 return 0
         elif pgroup == 6:
             if dtype == 0:
-                return (self.sign*(self.r_02 - self.r_12))
+                return self.r_02 - self.r_12
             elif dtype == 2:
-                return (self.sign*(np.sqrt(self.r_12**2 + self.r_01**2 + self.r_02**2 -(self.r_01*self.r_12) - (self.r_12*self.r_02) - (self.r_01*self.r_02))))*np.sqrt(2/3)
+                return np.sqrt(2/3 *(self.r_12**2 + self.r_01**2 + self.r_02**2 -(self.r_01*self.r_12) - (self.r_12*self.r_02) - (self.r_01*self.r_02)))
                 print('I can only calculate L_2 and L_inf distances')
                 return 0
+
+        else:
+            print('Please enter a meaningful 2D point group')
+            return 0
+
+    def rf_chir(self, dtype = 0):
+
+        return self.sign*self.rf_grpchir(pgroup = 2, dtype = dtype)
 
 
     'Return oriented PF'
@@ -162,8 +261,8 @@ class RF2_signed:
         cs = -l[0]/(np.sqrt(m[1])*np.sqrt(m[2]))
         alph = np.arccos(cs)
 
-        v_1 = [m[0], 0]
-        v_2 = [np.cos(alph), self.sign*np.sin(alph)]
+        v_1 = [np.sqrt(m[1]), 0]
+        v_2 = [np.sqrt(m[2])*np.cos(alph), np.sqrt(m[2])*np.sin(alph)]
 
         return [v_1, v_2]
 
@@ -182,37 +281,37 @@ class PF2:
             print('Warning! Projected form is not in Quotient Triangle')
 
         'Chirality sign reverts to 0 if on boundary'
-        if self.x + self.y == 1 or (self.x == 0 or self.y == 0):
+        if np.abs(1 - (self.x + self.y)) < tol  or (self.x < tol or self.y < tol):
             self.sign = 0
         else:
             self.sign = sign
 
     def qs_plot(self):
-        if self.sign < 0:
+        if self.sign < tol:
             return [1-self.x, 1-self.y]
         else:
             return [self.x, self.y]
 
     'Calculates chirality based on infinity metric and position in quotient square'
-    def pf_chir(self, dtype = 0, pgroup = 2):
+    def pf_grpchir(self, dtype = 0, pgroup = 2):
 
         if dtype == 0:
             if pgroup == 2:
-                return self.sign*min([self.x, self.y, (1-self.x -self.y)/2])
+                return min([self.x, self.y, (1-self.x -self.y)/2])
             elif pgroup == 4:
-                return self.sign*self.x
+                return self.x
             elif pgroup == 6:
-                return self.sign*(1-self.y)
+                return (1-self.y)
             else:
                 print('Please enter a meaningful point group!')
                 return 0
         elif dtype == 2:
             if pgroup == 2:
-                return self.sign*min([self.x, self.y, (1-self.x -self.y)/2])
+                return min([self.x, self.y, (1-self.x -self.y)/2])
             elif pgroup == 4:
-                return distgen(2, [self.x, self.y], (0,0))
+                return distgen(2, [self.x, self.y], [0,0])
             elif pgroup == 6:
-                return distgen(2, [self.x, 1-self.y], (0,0))
+                return distgen(2, [self.x, 1-self.y], [0,1])
             else:
                 print('Please enter a meaningful point group!')
                 return 0
@@ -221,12 +320,16 @@ class PF2:
                 print('Can only calculate D2 chirality for either L_2 or L_inf metric')
                 return 0
             elif pgroup == 4:
-                return distgen(dtype, [self.x, self.y], (0,0))
+                return distgen(dtype, [self.x, self.y], [0,0])
             elif pgroup == 6:
-                return distgen(dtype, [self.x, 1-self.y], (0,0))
+                return distgen(dtype, [self.x, 1-self.y], [0,1])
             else:
                 print('Please enter a meaningful point group!')
                 return 0
+
+    def pf_chir(self, dtype = 0):
+
+        return self.sign*self.pf_grpchir(pgroup = 2, dtype = dtype)
 
     def root_from_PF2(self):
         x = self.x
