@@ -5,10 +5,6 @@ import copy
 from math import atan2
 from math import degrees
 
-infile = '/Users/mattbright/Desktop/2D_Data/all_CSD_nodisord_cent_870630_clean_coforms.csv'
-outpath = '/Users/mattbright/Desktop/2D_Data'
-
-tol = 10**-8
 
 '-----------------------------------------------------'
 'UTILITY FUNCTIONS'
@@ -21,18 +17,6 @@ def distgen(q, v_1, v_2):
     else:
         return ((np.abs(v_1[0] - v_2[0])**q) + (np.abs(v_1[1] - v_2[1])**q))**(1/q)
 
-'A single reduction step on a three member list'
-def redstep(l, index):
-    newlist = []
-    eps = l[index]
-    for i in l:
-        if l.index(i) == index:
-            newlist.append(-eps)
-        else:
-            newlist.append(i+(2*eps))
-
-    return newlist
-
 'Cycle any list so that its least member is first'
 def mincyc(l):
 
@@ -40,6 +24,7 @@ def mincyc(l):
 
     return l[top:] + l[:top]
 
+'Round a list of floats to some defined level (default = 2dp)'
 def roundlist(l, r=2):
 
     rl = []
@@ -48,20 +33,17 @@ def roundlist(l, r=2):
 
     return rl
 
-'Calculate M_inf quantity (see paper, Lemma C.2)'
+'Calculate M_inf quantity (see maths paper, Lemma C.2)'
 def minf(a,b,c,d):
     return max([np.abs(a-b), np.abs(c-d), (np.abs(a+b-c+d))/2])
 
-'Make a 2D Lattice that from length and angle parameters (in degrees)'
+'Make an pair of 2D Lattice  vectors from length and angle parameters (in degrees)'
 def makelat (a, b, t):
     trad = np.deg2rad(t)
 
     return Lat2d([a, 0], [b*np.cos(trad), b*np.sin(trad)])
 
-def countsame(l):
-    count = [l.count(i) for i in l]
-    return max(count)
-
+'Given an obtuse superbase, calculate the lattice sign'
 def sb_sign(veclist):
 
     u_1 = veclist[1]/np.linalg.norm(veclist[1])
@@ -80,11 +62,28 @@ def sb_sign(veclist):
     else:
         sgn = -1
 
-    return ([v_0, v_1, v_2], sgn)
+    return sgn
+
+
+'Given a list of quantities, return a list consisting of the index each quantity'
+'would be at in the sorted version of the list'
+def index_sorted(l):
+
+    scomp = sorted(l.copy())
+    indl = []
+    countlist = []
+    for i in l:
+        shift = countlist.count(i)
+        indl.append(scomp.index(i) + shift)
+        countlist.append(i)
+
+    return indl
 
 '----------------------------------------------------'
 'LATTICE CLASS IN 2D WITH ROOT FORM GENERATOR'
 '----------------------------------------------------'
+
+'Basic Lattice Class - takes two input vectors in R2'
 class Lat2d:
 
     def __init__(self, vec_1, vec_2):
@@ -97,6 +96,7 @@ class Lat2d:
         self.inner = np.dot(vec_1, vec_2)
         self.angle = np.rad2deg(np.arccos(self.inner/(self.xlen * self.ylen)))
 
+    'Reduce any input lattice to its obtuse superbase'
     def make_obsb(self):
 
         v_1 = self.x
@@ -119,49 +119,36 @@ class Lat2d:
                 v_0 = -v_0
             inners = [-np.dot(v_1, v_2), -np.dot(v_0, v_1), -np.dot(v_0, v_2)]
 
-        return [v_0, v_1, v_2]
+            stepcount +=1
 
-    def sb_sign(self):
+        return ([[v_0, v_1, v_2], stepcount])
 
-        veclist = self.make_obsb()
-
-        u_1 = veclist[1]/np.linalg.norm(veclist[1])
-        u_0 = veclist[0]/np.linalg.norm(veclist[0])
-        u_2 = veclist[2]/np.linalg.norm(veclist[2])
-
-        ang_1 = degrees(atan2(u_1[1], u_1[0])) % 360
-        ang_0 = degrees(atan2(u_0[1], u_0[0])) % 360
-        ang_2 = degrees(atan2(u_2[1], u_2[0])) % 360
-
-        ang_12 = (ang_2 - ang_1) % 360
-        ang_10 = (ang_0 - ang_1) % 360
-
-        if ang_12 < ang_10:
-            sgn = 1
-        else:
-            sgn = -1
-
-        return sgn
-
+    'Generate the Coform of the obtuse superbase of a lattice as a list'
     def make_cf(self):
 
-        obsb = self.make_obsb()
+        obsb = self.make_obsb()[0]
+
         return [-np.dot(obsb[1], obsb[2]), -np.dot(obsb[0], obsb[1]), -np.dot(obsb[0], obsb[2])]
 
 
-    def lattice_sign(self):
+    'Calculate the sign of a lattice'
+    def lattice_sign(self, tol=10**-6):
 
         cf = mincyc(self.make_cf())
-        sgn = self.sb_sign()
+        sgn = sb_sign(self.make_obsb()[0])
 
-        if cf[1] > cf[2]:
-            sgn = -sgn
+        if np.abs(cf[0])<tol or (np.abs(cf[0] - cf[1]) < tol or np.abs(cf[1] - cf[2])<tol):
+            sgn = 0
         else:
-            sgn = sgn
+            if cf[1] > cf[2]:
+                sgn = -sgn
+            else:
+                sgn = sgn
 
         return sgn
 
-    def make_rf(self):
+    'Calculate the root form of a lattice - returns a ROOT FORM object'
+    def make_rf(self, tol=10**-6):
 
         cf = self.make_cf()
         sgn = self.lattice_sign()
@@ -173,12 +160,11 @@ class Lat2d:
         else:
                 return RF2_signed(rf, sgn)
 
-
-
 '----------------------------------------------------'
 '2D ORIENTED ROOT FORM CLASS'
 '----------------------------------------------------'
 
+'Basic Root Form Class - takes a list of positive numbers and a sign'
 class RF2_signed:
 
     def __init__(self, vec, sign):
@@ -199,7 +185,7 @@ class RF2_signed:
         else:
             return self.vec
 
-    'Calculate Chirality (L_inf and L_2)'
+    'Calculate Positive G-Chirality for groups D2, D4, D6 (L_inf and L_2)'
     def rf_grpchir(self, pgroup = 2, dtype = 0):
         if pgroup == 2:
             if dtype == 0:
@@ -211,14 +197,14 @@ class RF2_signed:
                 return 0
         elif pgroup == 4:
             if dtype == 0:
-                return max([2*self.r_12, (self.r_01-self.r_02)/2])
+                return min([self.r_12,  (self.r_02-self.r_01)/2])
             elif dtype == 2:
-                return (np.sqrt((4*self.r_12) +(self.r_01 + self.r_02)**2))/2
+                return np.sqrt((self.r_12)**2 + 0.25*(self.r_02 - self.r_02)**2)
                 print('I can only calculate L_2 and L_inf distances')
                 return 0
         elif pgroup == 6:
             if dtype == 0:
-                return self.r_02 - self.r_12
+                return (self.r_02 - self.r_12)/2
             elif dtype == 2:
                 return np.sqrt(2/3 *(self.r_12**2 + self.r_01**2 + self.r_02**2 -(self.r_01*self.r_12) - (self.r_12*self.r_02) - (self.r_01*self.r_02)))
                 print('I can only calculate L_2 and L_inf distances')
@@ -228,12 +214,13 @@ class RF2_signed:
             print('Please enter a meaningful 2D point group')
             return 0
 
+    'Calculate the signed D2 chirality (i.e. overall chirality)'
     def rf_chir(self, dtype = 0):
 
-        return self.sign*self.rf_grpchir(pgroup = 2, dtype = dtype)
+        return self.sign*min([self.rf_grpchir(pgroup = 2, dtype = dtype), self.rf_grpchir(pgroup = 4, dtype = dtype), self.rf_grpchir(pgroup = 6, dtype = dtype)])
 
 
-    'Return oriented PF'
+    'Return projected form'
     def projform(self):
 
         a = sum(self.vec)
@@ -269,9 +256,11 @@ class RF2_signed:
 '----------------------------------------------------'
 'PROJECTED FORM CLASS'
 '----------------------------------------------------'
+
+'Projected Form Basic Class - takes point (x,y) as list and a sign'
 class PF2:
 
-    def __init__(self, point, sign):
+    def __init__(self, point, sign, tol = 10**-6):
         self.qtpoint = point
         self.x = self.qtpoint[0]
         self.y = self.qtpoint[1]
@@ -286,9 +275,12 @@ class PF2:
         else:
             self.sign = sign
 
+    'Plots co-ordinates in the quotient square'
     def qs_plot(self):
-        if self.sign < tol:
-            return [1-self.x, 1-self.y]
+        if self.sign == 0:
+            return [self.x, self.y]
+        elif self.sign < 0:
+            return [1-self.y, 1-self.x]
         else:
             return [self.x, self.y]
 
@@ -329,24 +321,71 @@ class PF2:
 
     def pf_chir(self, dtype = 0):
 
-        return self.sign*self.pf_grpchir(pgroup = 2, dtype = dtype)
+        return self.sign*min([self.pf_grpchir(pgroup = 2, dtype = dtype), self.pf_grpchir(pgroup = 4, dtype = dtype), self.pf_grpchir(pgroup = 6, dtype = dtype)])
 
-    def root_from_PF2(self):
+    'Returns root form from projected form at a given scale '
+    def root_from_PF2(self, scale = 1):
         x = self.x
         y = self.y
 
-        r_12 = y/3
-        r_01 = (1-(r_12 + x))/2
-        r_02 = (1 -r_12 + x)/2
+        r_12 = scale * (y/3)
+        r_01 = scale *((1-(r_12 + x))/2)
+        r_02 = scale *((1 -r_12 + x)/2)
 
         l = sorted([r_12, r_01, r_02])
 
         return RF2_signed(l, self.sign)
 
-    def lattice_from_PF2(self):
+    def lattice_from_PF2(self, sc = 1):
 
-        return self.root_from_PF2().make2lat()
+        return self.root_from_PF2(scale = sc).make2lat()
 
+    'Plots spherical co-ordinates based on projected form co-ordinates'
+    def sphere_proj(self):
+        t = 1-(1/np.sqrt(2))
+
+        if ([self.x, self.y]) == (t,t):
+            countfail +=1
+            psi = np.nan
+        else:
+            if self.x == t and self.y > t:
+                countnpole +=1
+                psi = 90
+            elif self.x == t and self.y < t:
+                countspole +=1
+                psi = -90
+            else:
+                psi = np.rad2deg(np.arctan((self.y-t)/(self.x-t)))
+
+        if self.x - t < 0:
+            mu = psi + 22.5
+        else:
+            if psi >= -22.5:
+                mu = psi-157.5
+            else:
+                mu = psi+202.5
+
+
+        if -180 < mu < -45:
+            phi = r['sgn']*((1- self.x - self.y)/(np.sqrt(2)-1))*90
+            if np.abs(phi) > 90:
+                phi = r['sgn']*90
+
+        elif -45 <= mu < 67.5:
+            phi = r['sgn']*((np.sqrt(2)*self.x)/(np.sqrt(2)-1))*90
+            if np.abs(phi) > 90:
+                phi = r['sgn']*90
+
+        else:
+            phi = r['sgn']*((np.sqrt(2)*self.y)/(np.sqrt(2)-1))*90
+            if np.abs(phi) > 90:
+                phi = r['sgn']*90
+
+        return([mu, phi])
+
+'----------------------------------------------------'
+'LATTICE DISTANCE CALCULATIONS'
+'----------------------------------------------------'
 
 'Calculate Chebyshev distance between two root forms. '
 'Set orient = true to calculate oriented distance'
