@@ -18,7 +18,7 @@ Calculation of and with root forms in 2 Dimensions
 
 *index_sorted(list)* will take any list of quantities, and return a related list whose value at each index is the position the quantity at that index in the original list would be at in a sorted version of the list. 
 
-NEW: *globe_project(lon, lat)$ will take a longitude in the range [-180.180] and latitude in the range [-90. 90] and return the signed orientation-aware Projected Invariant of the associated lattice according to the maps in Bright & Kurlin (2022) as a PF2 object. 
+NEW: *globe_project(lon, lat)* will take a longitude in the range [-180.180] and latitude in the range [-90. 90] and return the signed orientation-aware Projected Invariant of the associated lattice according to the maps in Bright & Kurlin (2022) as a PF2 object. 
 
 NEW: *haar_random()* will generate a Haar Random lattice (see Marklov et al., 2018)
 
@@ -38,9 +38,9 @@ The Lat2D class should be entered as two lists [[x_1, y_1], [x_2, y_2]]. The fol
 
 NEW * lat_plot(self, save_file, r, type = 'Points', unit_cell = False, vectors = True) will save an r x r grid of lattice points as a png file to the save_file location. Set type to 'Voronoi' or 'Delaunay' to plot Voronoi cells or a Delaunay triangulation. If unit_cell is set to True then a filled unit cell of the lattice will appear on the plot. If vectors is set to True then arrows indicating the lattice vectors will be added.
 
-NEW *axis_rotate(self) will take any input lattice and rotate it such that the shortest vector lies in the positive direction on the x-axis
+NEW *axis_rotate(self)* will take any input lattice and rotate it such that the shortest vector lies in the positive direction on the x-axis
 
-NEW *lattice_scale(self, scale_type = 'length') will deploy *axis_rotate* and then scale the lattice such that either the length of the vector on the x-axis is equal to 1 (if scale_type is set to 'length') or the lattice has unit volume (if scale_type is set to 'volume'). 
+NEW *lattice_scale(self, scale_type = 'length')* will deploy *axis_rotate* and then scale the lattice such that either the length of the vector on the x-axis is equal to 1 (if scale_type is set to 'length') or the lattice has unit volume (if scale_type is set to 'volume'). 
 
 NEW *mod_lat_points(self)* returns a list of the three vectors (x,y) which represent the lattice in the moduli space {(x,y)| x in [-0.5,0.5], y > 0, x^2 + y^2 > 1}. 
 
