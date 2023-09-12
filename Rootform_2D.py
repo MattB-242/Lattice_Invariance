@@ -94,48 +94,6 @@ def lat_from_obsb(obsb):
 
     return(Lat2d(vecs[0], vecs[1]))
 
-'Calculate a projected form from a longitude and latitiude'
-def globe_project(mu, phi):
-    if -157.5 <= mu < 180:
-        mu_p = np.deg2rad(mu + 157.5)
-    else:
-        mu_p = np.deg2rad(517.5 + mu)
-    mu_p = np.deg2rad(mu + 157.5)
-    phi_p = (90 - np.abs(phi))/90
-    r = 1 - (1/np.sqrt(2))
-
-    if (np.rad2deg(mu_p) <= 112.5) or (np.rad2deg(mu_p) > 337.5):
-        x =  (phi_p*(1-(2*r))*np.cos(mu_p))/(np.sin(mu_p) + np.cos(mu_p))
-        y = (phi_p*(1-(2*r))*np.sin(mu_p))/(np.sin(mu_p) + np.cos(mu_p))
-
-        if phi > 0:
-            return PF2([x+r,y+r], 1)
-        elif phi < 0:
-            return PF2([x+r,y+r], -1)
-        else:
-            return PF2([x+r,y+r],0)
-
-    elif 112.5 < np.rad2deg(mu_p) < 225:
-        x = -r*phi_p
-        y = -r*(phi_p * (np.sin(mu_p)/np.cos(mu_p)))
-
-        if phi > 0:
-            return PF2([x+r,y+r], 1)
-        if phi < 0:
-            return PF2([x+r,y+r], -1)
-        else:
-            return PF2([x+r,y+r],1)
-
-    elif 225 <= np.rad2deg(mu_p) <= 337.5:
-        y = -r*phi_p
-        x = -r*(phi_p * (np.cos(mu_p)/np.sin(mu_p)))
-
-        if phi > 0:
-            return PF2([x+r,y+r], 1)
-        elif phi < 0:
-            return PF2([x+r,y+r], -1)
-        else:
-            return PF2([x+r,y+r],1)
 
 'Generate a Haar Random Lattice'
 def haar():
@@ -164,7 +122,7 @@ def row_input(fle, given, pair, name = 'None'):
 
     if given == 'spherical':
         pform = globe_project(pair[0], pair[1])
-        lat = pform.lattice_from_PF2()
+        lat = pform.lattice_from_PI()
         param_lat = lat.param_lat()
         ang = param_lat[2]
         len = param_lat[1]/param_lat[0]
@@ -174,13 +132,13 @@ def row_input(fle, given, pair, name = 'None'):
 
     elif given == 'projected':
         if pair[0] + pair[1] > 1:
-            pform = PF2(pair, -1)
+            pform = PI(pair, -1)
         else:
-            pform = PF2(pair, 1)
+            pform = PI(pair, 1)
 
         proj = pform.sphere_proj()
 
-        lat = pform.lattice_from_PF2()
+        lat = pform.lattice_from_PI()
         param_lat = lat.param_lat()
         ang = param_lat[2]
         len = param_lat[1]/param_lat[0]
@@ -242,7 +200,6 @@ class Lat2d:
         v_2 = self.y
         v_0 = self.ob
 
-
         inners = [-np.dot(v_1, v_2), -np.dot(v_0, v_1), -np.dot(v_0, v_2)]
 
         stepcount = 0
@@ -273,9 +230,6 @@ class Lat2d:
 
             return ([[v_0, v_1, v_2], stepcount])
 
-    'Return the two shortest vectors of the obtuse superbase of the lattice'
-
-
     'Generate the Coform of the obtuse superbase of a lattice as a list'
     def make_cf(self):
 
@@ -285,7 +239,7 @@ class Lat2d:
 
 
     'Calculate the sign of a lattice'
-    def lattice_sign(self, tol=10**-6):
+    def lattice_sign(self):
 
         return sb_sign(self.make_obsb()[0])
 
@@ -301,9 +255,9 @@ class Lat2d:
         #print('now the root form is ' + repr(rf))
 
         if np.abs(rf[0])<tol or (np.abs(rf[0] - rf[1]) < tol or np.abs(rf[1] - rf[2])<tol):
-                return RF2_signed(rf, 0)
+                return RI(rf, 0)
         else:
-                return RF2_signed(rf, sgn)
+                return RI(rf, sgn)
 
     'Calculate the projected form of a lattice'
     def make_pf(self, tol = 10**-16):
@@ -311,7 +265,7 @@ class Lat2d:
         return self.make_rf().projform()
 
     'Calculate the position of a lattice in the quotient square'
-    def make_qs(self, tol = 10**-6):
+    def make_qs(self, tol = 10**-16):
 
         return self.make_rf().projform().qs_plot()
 
@@ -335,7 +289,7 @@ class Lat2d:
     'Pin lattice to the x-axis'
     def axis_rotate(self):
 
-        sheep_dip = self.make_pf().lattice_from_PF2()
+        sheep_dip = self.make_pf().lattice_from_PI()
 
         return Lat2d(sheep_dip.x, sheep_dip.y)
 
@@ -512,18 +466,22 @@ class Lat2d:
 
         return SRI(sphere_h.lat, sphere_h.lon, lat_h)
 
-    'Plot Lattice SLP'
-    def lat_to_SLP(self):
+    'Retrieve Sphere Invariant from lattice'
+    def lat_to_SPI(self):
 
-        return(self.lat_to_SRI().spi_to_R2())
+        lat_h = sum(self.make_rf().vec)
+        sphere_h = self.make_pf().sphere_proj()
+
+
+        return SPI(sphere_h.lat, sphere_h.lon)
 
 
 '----------------------------------------------------'
 '2D ORIENTED ROOT FORM CLASS'
 '----------------------------------------------------'
 
-'Basic Root Form Class - takes a list of positive numbers and a sign'
-class RF2_signed:
+'Basic Root Invariant Class - takes a list of positive numbers and a sign'
+class RI:
 
     def __init__(self, vec, sign):
         self.vec = vec
@@ -576,12 +534,12 @@ class RF2_signed:
         return self.sign*min([self.rf_grpchir(pgroup = 2, dtype = dtype), self.rf_grpchir(pgroup = 4, dtype = dtype), self.rf_grpchir(pgroup = 6, dtype = dtype)])
 
 
-    'Return projected form'
+    'Return projected invariant'
     def projform(self):
 
         a = sum(self.vec)
 
-        return PF2([(self.r_02 - self.r_01)/a, (3*self.r_12)/a], self.sign)
+        return PI([(self.r_02 - self.r_01)/a, (3*self.r_12)/a], self.sign)
 
 
     'Return Coform'
@@ -615,7 +573,7 @@ class RF2_signed:
 '----------------------------------------------------'
 
 'Projected Form Basic Class - takes point (x,y) as list and a sign'
-class PF2:
+class PI:
 
     def __init__(self, point, sign, tol = 5*10**-8):
         self.qtpoint = point
@@ -683,7 +641,7 @@ class PF2:
         return self.sign*min([self.pf_grpchir(pgroup = 2, dtype = dtype), self.pf_grpchir(pgroup = 4, dtype = dtype), self.pf_grpchir(pgroup = 6, dtype = dtype)])
 
     'Returns root form from projected form at a given scale '
-    def root_from_PF2(self, scale = 1):
+    def root_from_PI(self, scale = 1):
         x = self.x
         y = self.y
 
@@ -693,11 +651,11 @@ class PF2:
 
         l = sorted([r_12, r_01, r_02])
 
-        return RF2_signed(l, self.sign)
+        return RI(l, self.sign)
 
-    def lattice_from_PF2(self, sc = 1):
+    def lattice_from_PI(self, sc = 1):
 
-        return self.root_from_PF2(scale = sc).make2lat()
+        return self.root_from_PI(scale = sc).make2lat()
 
     'Plots spherical root invariant based on projected form co-ordinates'
     'Set scale to the height of the lattice if this is available, otherwise defaults to 1'
@@ -738,61 +696,7 @@ class PF2:
 
         return SRI(phi, mu, sc)
 
-'----------------------------------------------------'
-'LATTICE DISTANCE CALCULATIONS'
-'----------------------------------------------------'
 
-'Calculate Chebyshev distance between two lattices. '
-'Set orient = true to calculate oriented distance'
-def rf2dist(l_1, l_2,  orient = True, dtype = 0):
-    rfv_1 = l_1.make_rf().vec
-    rfv_2 = l_2.make_rf().vec
-    if not orient or ((rfv_1.sign == rfv_2.sign) or (rfv_1.sign == 0 or rfv_2.sign == 0)):
-        return max(np.abs(rfv_1[0] - rfv_2[0]),np.abs(rfv_1[1] - rfv_2[1]),np.abs(rfv_1[2] - rfv_2[2]))
-    else:
-        if dtype == 0:
-            d_0 = max(rfv_1[0] + rfv_2[0], np.abs(rfv_1[1]-rfv_2[1]), np.abs(rfv_1[2] - rfv_2[2]))
-            d_1 = max(np.abs(rfv_1[2] - rfv_2[2]), minf(rfv_1[0], rfv_1[1], rfv_2[0], rfv_2[1]))
-            d_2 = max(np.abs(rfv_1[0] - rfv_2[0]), minf(rfv_1[1], rfv_1[2], rfv_2[1], rfv_2[2]))
-            return min(d_0, d_1, d_2)
-
-        else:
-            c1 = (-rfv_2[0], rfv_2[1], rfv_2[2])
-            c2 = (rfv_2[2], rfv_2[0], rfv_2[1])
-            c3 = (rfv_2[0], rfv_2[2], rfv_2[1])
-            return min(distgen(2, rfv_1, c1), distgen(2, rfv_1, c2), distgen(2, rfv_1, c3))
-
-'Calculate Chebyshev or L_2 distance between two lattices. '
-'Set orient = true to calculate oriented distance'
-def pf2dist(l_1, l_2, orient = True, dtype =0):
-    p_1 = l_1.make_pf().qtpoint
-    p_2 = l_2.make_pf().qtpoint
-    if not orient or (p_1.sign == p_2.sign or (p_1.sign == 0 or p_2.sign == 0)):
-        return distgen (2, p_1, p_2)
-    else:
-        if dtype == 0:
-            d_x = max([np.abs(p_2[0] - p_1[0]), p_2[1]+p_1[1]])
-            d_y = max([p_2[0] + p_1[0], np.abs(p_2[1]-p_1[1])])
-            d_xy = max([np.abs(p_2[0]-p_1[0]), 1-p_2[0]-p_2[1], np.abs(1-p_1[1]-p_2[0])])
-            return min(d_x, d_y, d_xy)
-        else:
-            return min(distgen(2, p_1, [-p_2[0], p_2[1]]), distgen(2, p_1, [p_2[0], -p_2[1]]), distgen(2, p_1, [1-p_2[1], 1-p_2[0]]))
-
-'Calculate Haversine Distance Between Two 2D Lattice Objects'
-def lat_haver(l,m,r=1):
-
-    sp_1 = l.lat_to_SRI()
-    sp_2 = m.lat_to_SRI()
-
-    return r*hv([sp_1,sp_2])[0][1]
-
-def chord_3d(l,m):
-
-    h_1 = sum(l[0].make_rf().vec)
-    h_2 = sum(l[1].make_rf().vec)
-
-    sp_1 = [np.deg2rad(i) for i in l[0].make_pf().sphere_proj().reverse()]
-    sp_2 = [np.deg2rad(i) for i in l[1].make_pf().sphere_proj().reverse()]
 
 '----------------------------------------------------'
 'SPHERICAL ROOT INVARIANT CLASS'
@@ -835,6 +739,79 @@ class SRI:
 
         return self.src_grp(2)
 
+    'Retrieve a lattice from an SRI'
+    def sri_to_lat(self, sc = 1):
+
+        return(globe_project(self.lon, self.lat).lattice_from_PI(sc = self.height))
+
+    'Retrieve a root invariant from an SRI'
+    def sri_to_root(self):
+
+        return(self.sri_to_lat.make_rf())
+
+'----------------------------------------------------'
+'SPHERICAL PROJECTED INVARIANT CLASS'
+'----------------------------------------------------'
+
+class SPI:
+
+    def __init__(self, lon, lat):
+        self.lat = lat
+        self.lon = lon
+        self.rlat = np.deg2rad(lat)
+        self.rlon = np.deg2rad(lon)
+
+    def spi_to_pi(self):
+        
+        mu = self.lon
+        phi = self.lat
+        
+        if -157.5 <= mu < 180:
+            mu_p = np.deg2rad(mu + 157.5)
+        else:
+            mu_p = np.deg2rad(517.5 + mu)
+        mu_p = np.deg2rad(mu + 157.5)
+        phi_p = (90 - np.abs(phi))/90
+        r = 1 - (1/np.sqrt(2))
+
+        if (np.rad2deg(mu_p) <= 112.5) or (np.rad2deg(mu_p) > 337.5):
+            x =  (phi_p*(1-(2*r))*np.cos(mu_p))/(np.sin(mu_p) + np.cos(mu_p))
+            y = (phi_p*(1-(2*r))*np.sin(mu_p))/(np.sin(mu_p) + np.cos(mu_p))
+
+            if phi > 0:
+                return PI([x+r,y+r], 1)
+            elif phi < 0:
+                return PI([x+r,y+r], -1)
+            else:
+                return PI([x+r,y+r],0)
+
+        elif 112.5 < np.rad2deg(mu_p) < 225:
+            x = -r*phi_p
+            y = -r*(phi_p * (np.sin(mu_p)/np.cos(mu_p)))
+
+            if phi > 0:
+                return PI([x+r,y+r], 1)
+            if phi < 0:
+                return PI([x+r,y+r], -1)
+            else:
+                return PI([x+r,y+r],1)
+
+        elif 225 <= np.rad2deg(mu_p) <= 337.5:
+            y = -r*phi_p
+            x = -r*(phi_p * (np.cos(mu_p)/np.sin(mu_p)))
+
+            if phi > 0:
+                return PI([x+r,y+r], 1)
+            elif phi < 0:
+                return PI([x+r,y+r], -1)
+            else:
+                return PI([x+r,y+r],1)
+
+    'Retrieve a lattice from an SRI'
+    def spi_to_lat(self, sc = 1):
+
+        return(self.spi_to_pi().lattice_from_PI(sc = 1))
+
     'Calculate Spherical Projected Group Chirality'
     def spc_grp(self, grp):
 
@@ -858,18 +835,58 @@ class SRI:
 
         return self.spc_grp(2)
 
-    'Retrieve a projected invariant from an SRI'
-    def spi_to_proj(self):
+'----------------------------------------------------'
+'LATTICE DISTANCE CALCULATIONS'
+'----------------------------------------------------'
 
-        return(globe_project(self.lon, self.lat))
+'Calculate Chebyshev distance between two lattices. '
+'Set orient = true to calculate oriented distance'
+def rf2dist(l_1, l_2,  orient = True, dtype = 0):
+    rfv_1 = l_1.make_rf().vec
+    rfv_2 = l_2.make_rf().vec
+    if not orient or ((rfv_1.sign == rfv_2.sign) or (rfv_1.sign == 0 or rfv_2.sign == 0)):
+        return max(np.abs(rfv_1[0] - rfv_2[0]),np.abs(rfv_1[1] - rfv_2[1]),np.abs(rfv_1[2] - rfv_2[2]))
+    else:
+        if dtype == 0:
+            d_0 = max(rfv_1[0] + rfv_2[0], np.abs(rfv_1[1]-rfv_2[1]), np.abs(rfv_1[2] - rfv_2[2]))
+            d_1 = max(np.abs(rfv_1[2] - rfv_2[2]), minf(rfv_1[0], rfv_1[1], rfv_2[0], rfv_2[1]))
+            d_2 = max(np.abs(rfv_1[0] - rfv_2[0]), minf(rfv_1[1], rfv_1[2], rfv_2[1], rfv_2[2]))
+            return min(d_0, d_1, d_2)
 
-    'Retrieve a lattice from an SRI'
-    def spi_to_lat(self, sc = 1):
+        else:
+            c1 = (-rfv_2[0], rfv_2[1], rfv_2[2])
+            c2 = (rfv_2[2], rfv_2[0], rfv_2[1])
+            c3 = (rfv_2[0], rfv_2[2], rfv_2[1])
+            return min(distgen(2, rfv_1, c1), distgen(2, rfv_1, c2), distgen(2, rfv_1, c3))
 
-        return(globe_project(self.lon, self.lat).lattice_from_PF2(sc = self.height))
+'Calculate Chebyshev or L_2 distance between two lattices. '
+'Set orient = true to calculate oriented distance'
+def PIdist(l_1, l_2, orient = True, dtype =0):
+    p_1 = l_1.make_pf().qtpoint
+    p_2 = l_2.make_pf().qtpoint
+    if not orient or (p_1.sign == p_2.sign or (p_1.sign == 0 or p_2.sign == 0)):
+        return distgen (2, p_1, p_2)
+    else:
+        if dtype == 0:
+            d_x = max([np.abs(p_2[0] - p_1[0]), p_2[1]+p_1[1]])
+            d_y = max([p_2[0] + p_1[0], np.abs(p_2[1]-p_1[1])])
+            d_xy = max([np.abs(p_2[0]-p_1[0]), 1-p_2[0]-p_2[1], np.abs(1-p_1[1]-p_2[0])])
+            return min(d_x, d_y, d_xy)
+        else:
+            return min(distgen(2, p_1, [-p_2[0], p_2[1]]), distgen(2, p_1, [p_2[0], -p_2[1]]), distgen(2, p_1, [1-p_2[1], 1-p_2[0]]))
 
-    'Return a spherical projection'
-    def spi_to_R2(self):
+'Calculate Haversine Distance Between Two 2D Lattice Objects'
+def lat_haver(l,m,r=1):
 
-        return [np.sin(self.rlon)*np.cos(self.rlat)/(1+(np.cos(self.rlon)*np.cos(self.rlat))),
-                np.sin(self.rlat)/(1+(np.cos(self.rlon)*np.cos(self.rlat)))]
+    sp_1 = l.lat_to_SRI()
+    sp_2 = m.lat_to_SRI()
+
+    return r*hv([sp_1,sp_2])[0][1]
+
+def chord_3d(l,m):
+
+    h_1 = sum(l[0].make_rf().vec)
+    h_2 = sum(l[1].make_rf().vec)
+
+    sp_1 = [np.deg2rad(i) for i in l[0].make_pf().sphere_proj().reverse()]
+    sp_2 = [np.deg2rad(i) for i in l[1].make_pf().sphere_proj().reverse()]
