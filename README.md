@@ -117,4 +117,3 @@ Takes a  spherical projected invariant as a list of [latitude, longitude]
 *pf2dist(pf_1, pf_2, orient = True, dtype = 2)* will take two projected forms and calculate the L_2 oriented distance between them by default. It will calculate the unoriented distance if orient is set to False (or both projected forms share a sign or either are achiral), and the oriented or unoriented Chebyshev distance if dtype is set to 0
 
 *rf2dist(rf_1, rf_2, orient = True, dtype = 2)* will take two root forms and calculate the L_2 oriented distance between them by default. It will calculate the unoriented distance if orient is set to False (or both projected forms share a sign or either are achiral), and the oriented or unoriented Chebyshev distance if dtype is set to 0
-
